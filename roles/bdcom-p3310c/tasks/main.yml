@@ -1,0 +1,4 @@
+---
+- name: Генерування файлу конфігурації для OLT BDCOM P3310C
+  template: src=bdcom-p3310c.j2 dest=/tmp/configs/bdcom-p3310c-{{ item.hostname }}.txt
+  with_items: "{{ switches }}"

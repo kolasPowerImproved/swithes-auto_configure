@@ -1,0 +1,167 @@
+!<stackingDB>00</stackingDB>
+!<stackingMac>01_70-72-cf-73-ab-83_02</stackingMac>
+!
+
+!
+!
+hostname RK.Lenina.bk.opt.2(7.163)
+
+sntp server 192.168.33.1 0.0.0.0 0.0.0.0
+!
+sntp client
+clock timezone UTC hour 2 minute 0 after-utc
+!
+!
+prompt RK.Lenina.bk.opt.2(7.163) 
+!
+!
+!
+!
+ip igmp filter
+clock timezone-predefined GMT+0200-Helsinki,Kyiv,Riga,Sofia,Tallinn,Vilnius
+clock summer-time Ukraine predefined europe
+!
+!
+!
+!
+!
+snmp-server community 23+-gbgtW ro
+snmp-server community 23+-gbgtW+ rw
+!
+!
+username admin access-level 15
+username admin password 7 c97bde3e17cb98bd9b7a3391d1219775
+enable password level 15 7 c97bde3e17cb98bd9b7a3391d1219775
+!
+!
+logging host 192.168.33.172
+logging trap
+!
+!
+!
+vlan database
+ vlan 1 name DefaultVlan media ethernet state active
+ vlan 7 media ethernet state active
+ vlan 22 media ethernet state active
+ vlan 23 media ethernet state active
+ vlan 208 media ethernet state active
+ vlan 311 media ethernet state active
+ vlan 520 media ethernet state active
+ vlan 559 media ethernet state active
+ vlan 599 media ethernet state active
+ vlan 726 media ethernet state active
+ !
+!
+!
+spanning-tree mst configuration
+!
+!
+ip igmp profile 1
+permit
+range 224.1.1.1 224.1.1.3
+!
+!
+!
+interface vlan 1
+interface vlan 7
+ ip address 10.10.7.163 255.255.255.0
+interface vlan 22
+interface vlan 23
+interface vlan 208
+interface vlan 311
+interface vlan 520
+interface vlan 559
+interface vlan 599
+interface vlan 726
+
+!
+!
+!
+!
+!
+interface ethernet 1/25
+ description UP.(10.10.7.168)
+ switchport allowed vlan add 1 untagged
+ switchport allowed vlan add 1,7,22,23,208,311,520,559,599,726 switchport mode trunk
+ spanning-tree spanning-disabled
+!
+
+interface ethernet 1/26
+ description UP.(10.10.)
+ switchport allowed vlan add 1 untagged
+ switchport allowed vlan add 1,7,22,23,208,311,520,559,599,726 switchport mode trunk
+ spanning-tree spanning-disabled
+
+interface ethernet 1/27
+ description UP.(10.10.)
+ switchport allowed vlan add 1 untagged
+ switchport allowed vlan add 1,7,22,23,208,311,520,559,599,726 switchport mode trunk
+ spanning-tree spanning-disabled
+
+interface ethernet 1/28
+ description UP.(10.10.)
+ switchport allowed vlan add 1 untagged
+ switchport allowed vlan add 1,7,22,23,208,311,520,559,599,726 switchport mode trunk
+ spanning-tree spanning-disabled
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip default-gateway  10.10.4.1
+!
+!
+!
+!
+!
+no spanning-tree
+!
+!
+!
+!
+!
+!
+authentication login tacacs local
+tacacs-server key dDBhOWM4K3BsdXM=
+tacacs-server 1 host 10.10.3.3 port 49 timeout 5 retransmit 2 key dDBhOWM4K3BsdXM=
+!
+!
+!
+aaa group server tacacs+ tac-init
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+line console
+ silent-time 0
+!
+!
+line VTY
+!
+!
+!
+end
+!

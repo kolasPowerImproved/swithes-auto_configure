@@ -1,0 +1,4 @@
+---
+# tasks file for vlan-config
+- name: Generate Vlan configuration
+  template: src=vlan-conf.j2 dest=~/Vlan-config.txt

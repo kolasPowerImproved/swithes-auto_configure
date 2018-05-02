@@ -1,0 +1,14 @@
+---
+# Плейбук для генерування налаштувань по вланах
+- name: Генеруємо налаштування
+  hosts: localhost
+  vars:
+          - start_vlan: 3955
+          - vlan_count: 20
+  #          - end_vlan: 3964
+          - ip_prefix: 172.16.107
+          - start_ip: 78
+          - out_port: Po4
+  
+  roles:
+          - vlan-config

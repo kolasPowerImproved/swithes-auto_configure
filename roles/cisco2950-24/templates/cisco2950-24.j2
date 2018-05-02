@@ -1,0 +1,106 @@
+version 12.1
+  no service pad
+  service timestamps debug datetime localtime
+  service timestamps log datetime localtime
+  service password-encryption
+  service sequence-numbers
+  !
+  hostname {{ item.hostname }}({{ item.short_ip }})
+  !
+  logging buffered 131072 informational
+  logging console informational
+  logging monitor informational
+  !
+  aaa new-model
+  aaa group server tacacs+ tac-init
+  server 10.10.3.3
+  !
+  clock timezone EET 2
+  clock summer-time EEST recurring last Sun Mar 2:00 last Sun Oct 3:00
+  ip subnet-zero
+  no ip source-route
+  ip rcmd rcp-enable
+  ip rcmd rsh-enable
+  ip rcmd remote-host root 192.168.33.90 root enable
+  ip rcmd remote-host root 192.168.33.100 root enable
+  !
+  no ip domain-lookup
+  !
+  spanning-tree mode pvst
+  no spanning-tree optimize bpdu transmission
+  spanning-tree extend system-id
+  vtp domain {{ item.hostname }}
+  vtp mode transparent
+  !
+  vlan {{ item.control_vlan }}{% if item.vlans is defined and item.vlans != None %}{% for vlan in item.vlans %},{{ vlan }}{% endfor %}{% endif %}
+
+  !
+{# Налаштування інтерфейсів #}
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+{% for interface in range(start_from_interface, end_on_interface+1) %}
+  interface FastEthernet0/{{ interface }}
+   switchport access vlan {{ item.vlan_on_interface }}
+   switchport block multicast
+  !
+{% endfor %}
+{% endif %}
+  !
+  interface GigabitEthernet0/1
+  description UP.({{ item.uplink }})
+  switchport trunk allowed vlan {{item.control_vlan }}{% if item.vlans is defined and item.vlans != None %}{% for vlan in item.vlans %},{{ vlan }}{% endfor %}{% endif %}
+
+  switchport mode trunk
+  !
+{% if item.trunk_ports is defined %}{% for port in item.trunk_ports %}
+  interface GigabitEthernet0/2
+  description TR.({{ port.next_hop }})
+  switchport trunk allowed vlan {% for vlan in port.vlans %}{{ vlan }}{% if not loop.last %},{% endif  %}{% endfor %}
+  {% endfor %}
+  {% else %}
+  interface GigabitEthernet0/2
+  shutdown
+  {% endif %}
+
+  !
+  interface Vlan1
+  no ip address
+  no ip route-cache
+  shutdown
+  !
+  interface Vlan{{ item.control_vlan }}
+  ip address {{ item.ip }} 255.255.255.0
+  no ip route-cache
+  !
+  ip default-gateway 10.10.{{ item.control_vlan }}.1
+  no ip http server
+  logging 192.168.33.172
+  snmp-server engineID local 000000090200003080AEECC0
+  snmp-server community 23+-gbgtW RO
+  snmp-server community 23+-gbgtW+ RW
+  tacacs-server host 10.10.3.3 key 7 06125F20154D5152151B0718
+  !
+  line con 0
+  stopbits 1
+  line vty 0 4
+  session-timeout 1440
+  exec-timeout 1440 0
+  password 7 091D1C5A485744
+  history size 256
+  line vty 5 15
+  session-timeout 1440
+  exec-timeout 1440 0
+  password 7 025756085A545C
+  history size 256
+  !
+  ntp clock-period 17179916
+  ntp server {{ item.ntp_server }}
+  !
+  aaa authentication login default group tac-init local
+  aaa authorization exec default group tac-init local
+  aaa authorization commands 1 default group tac-init local
+  enable secret 0 {{ vault_enable_secret }}
+  !
+  username arpserver privilege 0 password 7 10430E1D1514161F
+  username admin password 0 {{ vault_admin_password }}
+  !
+  end

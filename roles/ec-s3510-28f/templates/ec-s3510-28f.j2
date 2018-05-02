@@ -1,0 +1,115 @@
+!<stackingDB>00</stackingDB>
+!<stackingMac>01_70-72-cf-73-ab-83_02</stackingMac>
+!
+hostname {{ item.hostname }}({{ item.short_ip }})
+!
+sntp server 192.168.33.1 0.0.0.0 0.0.0.0
+!
+sntp client
+clock timezone UTC hour 2 minute 0 after-utc
+!
+!
+prompt {{ item.hostname }}({{ item.short_ip }})
+!
+!
+ip igmp filter
+clock timezone-predefined GMT+0200-Helsinki,Kyiv,Riga,Sofia,Tallinn,Vilnius
+clock summer-time Ukraine predefined europe
+!
+!
+snmp-server community 23+-gbgtW ro
+snmp-server community 23+-gbgtW+ rw
+!
+!
+username admin access-level 15
+username admin password 7 c97bde3e17cb98bd9b7a3391d1219775
+enable password level 15 7 c97bde3e17cb98bd9b7a3391d1219775
+!
+!
+logging host 192.168.33.172
+logging trap
+!
+!
+vlan database
+ vlan 1 name DefaultVlan media ethernet state active
+ vlan {{ item.control_vlan }} media ethernet state active
+ {% if item.vlans is defined and item.vlans != None %}{% for vlan in item.vlans %}vlan {{ vlan  }} media ethernet state active
+ {% endfor %}{% endif %}
+!
+!
+spanning-tree mst configuration
+!
+!
+ip igmp profile 1
+permit
+range 224.1.1.1 224.1.1.3
+!
+!
+interface vlan 1
+interface vlan {{ item.control_vlan }}
+ ip address 10.10.{{ item.short_ip }} 255.255.255.0
+{% if item.vlans is defined and item.vlans != None %}{% for vlan in item.vlans %}interface vlan {{ vlan }}
+{% endfor %}{% endif %}
+!
+!
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+{% for port in range(item.start_from_interface, 25) %} interface ethernet 1/{{ port }}
+ switchport allowed vlan add {{ item.vlan_on_interface }} untagged
+
+ switchport native vlan {{ item.vlan_on_interface }}
+ ip igmp filter
+
+ {% endfor %}
+{% endif %}
+!
+!
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "no" %}
+{% for port in range(1,25) %} interface ethernet 1/{{ port }}
+ ip igmp filter 1
+!
+
+{% endfor %}
+{% endif %}
+!
+!
+interface ethernet 1/25
+ description UP.({{ item.uplink }})
+ switchport allowed vlan add 1 untagged
+ switchport allowed vlan add 1,{{ item.control_vlan}}{% if item.vlans is defined and item.vlans != None %}{% for vlan in item.vlans %},{{ vlan }}{% endfor %} tagged{% endif %}
+
+ switchport mode trunk
+ spanning-tree spanning-disabled
+!
+!
+interface ethernet 1/26
+ shutdown
+!
+interface ethernet 1/27
+ shutdown
+!
+interface ethernet 1/28
+ shutdown
+!
+!
+ip default-gateway 10.10.{{ item.control_vlan }}.1
+!
+!
+no spanning-tree
+!
+!
+authentication login tacacs local
+tacacs-server key dDBhOWM4K3BsdXM=
+tacacs-server 1 host 10.10.3.3 port 49 timeout 5 retransmit 2 key dDBhOWM4K3BsdXM=
+!
+!
+aaa group server tacacs+ tac-init
+!
+!
+line console
+ silent-time 0
+!
+!
+line VTY
+!
+!
+end

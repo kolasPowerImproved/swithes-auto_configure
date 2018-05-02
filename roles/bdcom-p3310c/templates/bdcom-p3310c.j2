@@ -1,0 +1,196 @@
+!version 10.1.0D build 34983
+service timestamps log date
+service timestamps debug date
+service password-encryption
+logging 192.168.33.171
+logging trap debugging
+!
+hostname {{ item.hostname }}({{ item.short_ip }})
+port-protected 1
+!
+epon onu-uni-link-status-on
+!
+!
+!
+!
+ip default-gateway 10.12.0.1
+!
+!
+no spanning-tree
+!
+aaa authentication login default group tac-init local
+aaa authentication enable default enable
+!
+username admin password 7 08194329563E05055D1C4C3913690F
+!
+enable password 7 08194329563E05055D1C4C3913690F level 15
+!
+
+epon oam-version 1 0x21
+epon oam-version 2 0x20
+!
+!!slot 0 89
+interface GigaEthernet0/1
+ shutdown
+!
+interface GigaEthernet0/2
+ shutdown
+!
+interface GigaEthernet0/3
+ description UP.({{ item.uplink }})
+ switchport trunk vlan-allowed 617,4000
+ switchport trunk vlan-untagged none
+ switchport mode trunk
+ switchport pvid 4000
+!
+interface GigaEthernet0/4
+ shutdown
+!
+interface GigaEthernet0/5
+ shutdown
+!
+interface GigaEthernet0/6
+ shutdown
+!
+interface EPON0/1
+ description EPON1
+ epon onu-authen-method mac
+ switchport trunk vlan-allowed add 4000-4003
+ switchport trunk vlan-untagged none
+ switchport mode trunk
+ switchport protected 1
+ epon inner-onu-switch
+!
+!
+interface EPON0/2
+ description EPON2
+ epon onu-authen-method mac
+ switchport trunk vlan-allowed 4000-4003
+ switchport trunk vlan-untagged none
+ switchport mode trunk
+ switchport protected 1
+ epon inner-onu-switch
+!
+interface EPON0/3
+ description EPON3
+ epon onu-authen-method mac
+ switchport trunk vlan-allowed 4000-4003
+ switchport trunk vlan-untagged none
+ switchport mode trunk
+ switchport protected 1
+ epon inner-onu-switch
+!
+interface EPON0/4
+ description EPON4
+ epon onu-authen-method mac
+ switchport trunk vlan-allowed 4000-4003
+ switchport trunk vlan-untagged none
+ switchport mode trunk
+ switchport protected 1
+ epon inner-onu-switch
+!
+!!slot end
+!
+interface VLAN617
+ description Manage
+ ip address {{ item.ip }} 255.255.255.0
+!
+!
+!
+vlan 617
+ name epon_manage
+!
+vlan 4000
+ name mcast
+!
+vlan 4001
+ name mcast_group_1
+!
+vlan 4002
+ name mcast_group_2
+!
+vlan 4003
+ name mcast_group_3
+!
+vlan 1,617,4000-4003
+!
+!
+ip mcst enable
+ip mcst querier address 10.67.66.1
+ip mcst mrouter interface GigaEthernet0/3
+ip mcst mc-vlan 4001 range 239.255.50.1 - 239.255.50.113 , 239.255.50.115 - 239.255.50.141
+!
+!
+!
+!
+!
+!
+!
+snmp-server community 0 {{ vault_snmp_community_ro }} RO 
+snmp-server community 0 {{ vault_snmp_community_rw }} RW 
+!
+aaa group server tacacs+ tac-init
+ server 10.10.3.3 key 0 {{ vault_tacacs_pass }}
+!
+ greeting =ISP TIM= *OLT BDCOM P3310C EPON*
+line console 0
+ exec-timeout 1200
+!
+line vty 0
+ exec-timeout 1200
+!
+line vty 1
+ exec-timeout 1200
+!
+line vty 2
+ exec-timeout 1200
+!
+line vty 3
+ exec-timeout 1200
+!
+line vty 4
+ exec-timeout 1200
+!
+line vty 5
+ exec-timeout 1200
+!
+line vty 6
+ exec-timeout 1200
+!
+line vty 7
+ exec-timeout 1200
+!
+line vty 8
+ exec-timeout 1200
+!
+line vty 9
+ exec-timeout 1200
+!
+line vty 10
+ exec-timeout 1200
+!
+line vty 11
+ exec-timeout 1200
+!
+line vty 12
+ exec-timeout 1200
+!
+line vty 13
+ exec-timeout 1200
+!
+line vty 14
+ exec-timeout 1200
+!
+line vty 15
+ exec-timeout 1200
+!
+!
+!
+time-zone Europe/Kiev 3 0
+ntp master primary
+ntp query-interval 60
+ntp server 192.168.33.125
+!
+!Pending configurations for absent linecards:
+!
+!No configurations pending global

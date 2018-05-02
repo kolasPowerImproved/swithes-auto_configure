@@ -1,0 +1,93 @@
+version 12.0
+  no service pad
+  service timestamps debug datetime localtime
+  service timestamps log datetime localtime
+  service password-encryption
+  service sequence-numbers
+  !
+  hostname {{ item.hostname }}({{ item.short_ip }})
+  !
+  logging buffered 131072 informational
+  logging console informational
+  logging monitor informational
+  !
+  aaa new-model
+  aaa group server tacacs+ tac-init
+  server 10.10.3.3
+  !
+  aaa authentication login default group tac-init local
+  aaa authorization exec default group tac-init local
+  aaa authorization commands 1 default group tac-init local
+  clock timezone EET 2
+  clock summer-time EEST recurring last Sun Mar 2:00 last Sun Oct 3:00
+  !
+  ip subnet-zero
+  ip rcmd rcp-enable
+  ip rcmd rsh-enable
+  ip rcmd remote-host root 192.168.33.100 root enable
+  ip rcmd remote-host root 192.168.33.90 root enable
+  no ip domain-lookup
+  !
+  vtp domain {{ item.hostname }}
+  vtp mode transparent
+  !
+  !
+{# Налаштування інтерфейсів #}
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+{% for interface in range(item.start_from_interface, item.end_on_interface) %}
+  interface FastEthernet0/{{ interface }}
+   port block multicast
+   switchport access vlan {{ item.vlan_on_interface }}
+  !
+{% endfor %}
+{% endif %}
+  !
+  !
+  interface GigabitEthernet0/1
+  description UP.({{ item.uplink }})
+  switchport trunk encapsulation dot1q
+  switchport trunk allowed vlan {{ item.control_vlan }}{% if item.vlans != None %}{% for vlan in item.vlans %},{{ vlan }}{% endfor %}{% endif %}
+
+  switchport mode trunk
+  !
+  interface GigabitEthernet0/2
+  shutdown
+  !
+  interface VLAN1
+  no ip directed-broadcast
+  no ip route-cache
+  shutdown
+  !
+  interface VLAN{{ item.control_vlan }}
+  ip address {{ item.ip }} 255.255.255.0
+  no ip directed-broadcast
+  no ip route-cache
+  !
+  ip default-gateway 10.10.{{ item.control_vlan }}.1
+  no ip http server
+  logging 192.168.33.172
+  snmp-server engineID local 000000090200003080AEECC0
+  snmp-server community 23+-gbgtW RO
+  snmp-server community 23+-gbgtW+ RW
+  tacacs-server host 10.10.3.3 key t0a9c8+plus
+  !
+  line con 0
+  transport input none
+  stopbits 1
+  line vty 0 4
+  session-timeout 1440
+  exec-timeout 1440 0
+  password 7 091D1C5A485744
+  line vty 5 15
+  session-timeout 1440
+  exec-timeout 1440 0
+  password 7 025756085A545C
+  !
+  ntp clock-period 11258939
+  ntp server {{ item.ntp_server }}
+  !
+  enable secret 0 {{ vault_enable_secret }}
+  !
+  username arpserver privilege 0 password 7 10430E1D1514161F
+  username admin password 0 {{ vault_admin_password }}
+  end

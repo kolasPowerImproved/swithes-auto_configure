@@ -1,0 +1,138 @@
+! Stack Manager :
+! Chassis :
+system name {{ item.hostname }}({{ item.short_ip }})
+system location "{{ item.hostname }}"
+system timezone EET
+! Configuration:
+! VLAN :
+vlan 1 enable name "VLAN 1"
+vlan {{ item.control_vlan }}  enable name "VLAN {{ item.control_vlan }}"
+vlan 48 enable name "VLAN 48"
+!
+{# Налаштування влінв на користувацьких інтерфейсах #}
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+{% for interface in range(item.start_from_interface, item.end_on_interface) %}
+vlan {{ item.vlan_on_interface }} port default 1/{{ interface }}
+{% endfor %}
+{% endif %}
+  !
+vlan 589 enable name "Pacmanna"
+vlan 589 port default 1/1
+! VLAN SL:
+! IP :
+no ip service ftp
+ip service ssh
+ip service telnet
+no ip service udp-relay
+ip service http
+ip service network-time
+ip service snmp
+no ip service avlan-telnet
+no ip service avlan-http
+no ip service avlan-telnet
+no ip service avlan-http
+no ip service avlan-secure-http
+ip service secure-http
+no ip service avlan-http-proxy
+ip interface "Management" address {{ item.ip }} mask 255.255.255.0 vlan {{ item.control_vlan }}
+! IPX :
+! IPMS :
+ip multicast status enable
+ip multicast querying enable
+ip multicast zapping enable
+ip multicast max-group action drop
+! AAA :
+aaa tacacs+-server "tac-init" host 10.10.3.3 key "cafeedbf4dabb24d3ecd18f00b8a6ce2" port 49 timeout 2
+aaa tacacs+-server "tac-local" host 192.168.33.110 key "cafeedbf4dabb24d3ecd18f00b8a6ce2" port 49 timeout 2
+aaa authentication console "tac-init" "tac-local" "local"
+aaa authentication telnet "tac-init" "tac-local" "local"
+aaa authentication http "tac-init" "tac-local" "local"
+aaa authentication snmp "local"
+aaa authentication ssh "tac-init" "tac-local" "local"
+aaa accounting session "tac-init" "tac-local" "local"
+! PARTM :
+! AVLAN :
+! 802.1x :
+! QOS :
+! Policy manager :
+! Session manager :
+session timeout cli 10
+session timeout http 10
+session prompt default "{{ item.hostname }} ({{ item.short_ip }})# "
+session login-timeout 600
+! SNMP :
+snmp security no security
+snmp community map "23+-gbgtW" user "snmpuser" on
+snmp station 192.168.33.172 162 "snmpuser" v2 enable
+! RIP :
+! OSPF :
+! BFD-STD :
+! ISIS :
+! IPv6 :
+! IPSec :
+! IP multicast :
+! IPRM :
+ip static-route 0.0.0.0/0 gateway 10.10.{{ item.control_vlan }}.1 metric 1
+! RIPng :
+! OSPF3 :
+! BGP :
+! Health monitor :
+! Interface :
+{# Встановлення обмеженої швидкості на користувацьких інтерфейсах #}
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+{% for interface in range(item.start_from_interface, item.end_on_interface) %}
+interfaces 1/{{ interface }} speed 100
+{% endfor %}
+{% endif %}
+
+!
+interfaces 1/20 speed 100
+interfaces 1/21 hybrid FORCED-COPPER
+interfaces 1/21 hybrid copper speed 100
+interfaces 1/22 hybrid FORCED-COPPER
+interfaces 1/22 hybrid copper speed 100
+interfaces 1/23 hybrid FORCED-COPPER
+interfaces 1/23 alias "kv.35"
+interfaces 1/23 hybrid copper speed 100
+interfaces 1/24 alias "UP.({{ item.uplink }})"
+! Udld :
+! Netsec :
+! Port Mapping :
+! Link Aggregate :
+! VLAN AGG:
+! 802.1Q :
+{# Налаштування вланів на UpLink - керуючий #}
+vlan {{ item.control_vlan }} 802.1q 1/24 "TAG PORT 1/24 VLAN {{ item.control_vlan }}"
+
+{# Налаштування вланів на UpLink (тегований, транк) #}
+{% if item.vlans is defined and item.vlans != "" %}
+{% for vlan in item.vlans %}
+vlan {{ vlan }} 802.1q 1/24 "TAG PORT 1/24 VLAN {{ vlan }}"
+{% endfor %}
+{% endif %}
+
+vlan 589 802.1q 1/24 "TAG PORT 1/24 VLAN 589"
+! Spanning tree :
+bridge mode 1x1
+! Bridging :
+! Bridging :
+! Port mirroring :
+! UDP Relay :
+! Server load balance :
+! System service :
+ip name-server 192.168.33.99 192.168.33.125
+ip domain-lookup
+swlog console level debug3
+! SSH :
+! VRRP :
+! Web :
+ip http ssl
+! AMAP :
+! LLDP :
+! Lan  Power :
+! NTP :
+ntp server {{ item.ntp_server }} key 0 version 4 minpoll 6 prefer
+! RDP :
+! VLAN STACKING:
+! Ethernet-OAM :
+! ERP :

@@ -1,0 +1,4 @@
+---
+- name: Генерування файлу конфігурації для Сisco 2950-24
+  template: src=cisco2950-24.j2 dest=/tmp/configs/{{ item.hostname }}.txt
+  with_items: "{{ switches }}"

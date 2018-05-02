@@ -1,0 +1,36 @@
+{# Створення вланів для налаштування сірих і білих ІР #}
+
+{% if vlan_count is defined and end_vlan is not defined %}
+{% set end_vlan = start_vlan + vlan_count %}
+{% endif %}
+
+conf t
+vlan {{ start_vlan }}-{{ end_vlan }}
+exit
+
+{# Налаштування влан інтерфейсів #}
+{% for vlan in range(start_vlan, end_vlan+1) %}
+interface vlan {{ vlan }}
+ip unnumbered Loopback0
+ip verify unicast source reachable-via rx
+no ip proxy-arp
+ip policy route-map rdr-101-201
+no shutdown
+
+{% endfor %}
+
+{# Налаштування маршрутів#}
+{% set  ip = start_ip %}
+{% for vlan in range(start_vlan, end_vlan+1 ) %}
+{% if ip < 255 %}
+ip route {{ ip_prefix }}.{{ ip }} 255.255.255.255 vlan {{ vlan }}
+{% set ip = ip + 1 %}
+{% endif %}
+{% endfor %}
+
+{# Налаштування вихідного порту #}
+{% if out_port is defined %}
+interface {{ out_port }}
+switchport trunk allowed vlan add {{ start_vlan }}-{{ end_vlan }}
+exit
+{% endif %}

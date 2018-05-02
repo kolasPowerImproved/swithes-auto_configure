@@ -1,0 +1,114 @@
+! Stack Manager :
+! Chassis :
+system name {{ item.hostname }}({{ item.short_ip }})
+system location "{{ item.hostname }}"
+system timezone EET
+! Configuration:
+! VLAN :
+vlan 1 enable name "VLAN 1"
+vlan {{ item.control_vlan }}  enable name "VLAN {{ item.control_vlan }}"
+{# Налаштування доступних вланів #}
+{% if item.vlans is defined and item.vlans != None %}
+{% for vlan in item.vlans %}
+vlan {{ vlan }} enable name "VLAN {{ vlan }}"
+{% endfor %}{% endif %}
+!
+{# Налаштування влaнів на користувацьких інтерфейсах #}
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+vlan {{ item.vlan_on_interface }} port default 1/{{ item.start_from_interface }}-{{ role_end_ports_for_users }}
+{% endif %}
+!
+! VLAN SL:
+! IP :
+no ip service ftp
+ip service ssh
+ip service telnet
+no ip service udp-relay
+no ip service http
+ip service network-time
+ip service snmp
+no ip service avlan-telnet
+no ip service avlan-http
+no ip service avlan-telnet
+no ip service avlan-http
+no ip service avlan-secure-http
+no ip service secure-http
+no ip service avlan-http-proxy
+ip interface "Management" address {{ item.ip }} mask 255.255.255.0 vlan {{ item.control_vlan }}
+! IPX :
+! IPMS :
+ip multicast status enable
+ip multicast querying enable
+ip multicast zapping enable
+ip multicast max-group action drop
+! AAA :
+aaa tacacs+-server "tac-init" host 10.10.3.3 key {{ vault_tacacs_pass }} port 49 timeout 2
+aaa tacacs+-server "tac-local" host 192.168.33.110 key {{ vault_tacacs_pass }} port 49 timeout 2
+aaa authentication console "tac-init" "tac-local" "local"
+aaa authentication telnet "tac-init" "tac-local" "local"
+aaa authentication http "tac-init" "tac-local" "local"
+aaa authentication snmp "local"
+aaa authentication ssh "tac-init" "tac-local" "local"
+aaa accounting session "tac-init" "tac-local" "local"
+! PARTM :
+! AVLAN :
+! 802.1x :
+! QOS :
+! Policy manager :
+! Session manager :
+session timeout cli 10
+session timeout http 10
+session prompt default "{{ item.hostname }} ({{ item.short_ip }})# "
+session login-timeout 600
+! Users:
+user admin password "{{ vault_admin_password}}"
+! SNMP :
+user snmpuser read-only all password "{{ vault_snmp_user_pass  }}" no auth
+snmp security no security
+snmp community map "{{ vault_snmp_community_ro }}" user "snmpuser" on
+snmp station 192.168.33.172 162 "snmpuser" v2 enable
+! IP multicast :
+! IPRM :
+ip static-route 0.0.0.0/0 gateway 10.10.{{ item.control_vlan }}.1 metric 1
+! Interface :
+{# Встановлення обмеженої швидкості на користувацьких інтерфейсах #}
+{% if item.configure_user_interfaces is defined and item.configure_user_interfaces == "yes" %}
+interfaces 1/{{ item.start_from_interface }}-{{ role_end_ports_for_users }} speed 100
+{% endif %}
+interfaces 1/{{ role_uplink_port }} alias "UP.({{ item.uplink }})"
+{% if item.trunk_ports is defined %}{% for port in item.trunk_ports %}
+interfaces 1/{{ role_trunk_port }} alias "TR.({{ port.next_hop }})"
+{% endfor %}
+{% endif %}
+! 802.1Q :
+{# Налаштування вланів на UpLink - керуючий #}
+vlan {{ item.control_vlan }} 802.1q 1/{{ role_uplink_port }} "TAG PORT 1/{{ role_uplink_port}} VLAN {{ item.control_vlan }}"
+{# Налаштування вланів на UpLink (тегований, транк) #}
+{% if item.vlans is defined and item.vlans != None %}
+{% for vlan in item.vlans %}
+vlan {{ vlan }} 802.1q 1/{{ role_uplink_port }} "TAG PORT 1/{{ role_uplink_port }} VLAN {{ vlan }}"
+{% endfor %}
+{% endif %}
+{# Налаштування транкових портів для піключення наступних комутаторів #}
+{% if item.trunk_ports is defined %}{% for port in item.trunk_ports %}
+{% for vlan in port.vlans %}
+vlan {{ vlan }} 802.1q 1/{{ role_trunk_port }} "TAG PORT 1/{{ role_trunk_port }} VLAN {{ vlan }}"
+{% endfor %}
+{% endfor %}
+{% else %}
+{% endif %}
+
+! Spanning tree :
+bridge mode 1x1
+! System service :
+ip name-server 192.168.33.99 192.168.33.125
+ip domain-lookup
+swlog console level debug3
+! SSH :
+! VRRP :
+! Web :
+!! ip http ssl
+! LLDP :
+! Lan  Power :
+! NTP :
+ntp server {{ item.ntp_server }} key 0 version 4 minpoll 6 prefer

@@ -1,0 +1,4 @@
+---
+# vars file for alcatel-os-6850-u24x
+role_end_ports_for_users: 20
+role_uplink_port: 21

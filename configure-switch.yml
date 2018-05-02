@@ -1,0 +1,40 @@
+---
+- name: Генерування конфігурації для обраного комутатора
+  hosts: localhost
+  vars_files:
+          - sensitive.yml
+
+# Доступні для вибору комутатори
+#AlcatelOS6850
+#alcatel-os-6850-u24x
+#
+#bdcom-p3310c
+#
+#cisco2950-24
+#cisco2950-48
+#
+#cisco35XX
+#
+#ec-s3510-28f
+  roles:
+          - cisco35XX
+
+  vars:
+          switches:
+                  - hostname: Vorov.bk.opt.3
+                    uplink: 10.10.8.127
+                    short_ip: 8.75
+                    ip: 10.10.8.75
+                    control_vlan: 8
+                    vlans: [ 22,63,193,335,474,530,588,629,692,781,816,927,933,993,1002,1003,1004,1005 ] 
+                    #trunk_ports:
+                    #      - next_hop: 10.10.7.245
+                    #        vlans: [7,76]
+                    ntp_server: 192.168.33.1
+                    # Config interfaces: "yes" or "no"
+                    configure_user_interfaces: "yes"
+                    start_from_interface: 1
+                    end_on_interface: 24
+                    vlan_on_interface: 193
+
+                    
